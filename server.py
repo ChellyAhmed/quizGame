@@ -2,27 +2,74 @@
 #  game logic with clients.
 #
 #
+import socket
+from _thread import *
 
-#TODO
+players = []
+
 def startServer():
+    # start server with socket TCP and listen for connections
     print("Starting server")
+    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serverSocket.bind((socket.gethostname(), 1234))
+    serverSocket.listen(5)
+    while True:
+        # accept connections
+        clientSocket, address = serverSocket.accept()
+        print(f"Connection from {address} has been established!")
+        # start thread to handle client connection
+        start_new_thread(playerConnectionThread, tuple([clientSocket]))
 
-#TODO
-def startGame():
-    print("Starting game")
 
-#TODO
-def endGame():
-    print("Ending game")
+def playerConnectionThread(clientSocket):
+    # send username request
+    clientSocket.send(bytes("Enter username: ", "utf-8"))
+    # receive username
+    username = clientSocket.recv(1024).decode("utf-8")
+    # check if username is unique
+    while username in [player["username"] for player in players]:
+        # send username request
+        clientSocket.send(bytes("Username already taken, enter a different username: ", "utf-8"))
+        # receive username
+        username = clientSocket.recv(1024).decode("utf-8")
+    # add player to players list
+    players.append({"username": username, "connection": clientSocket})
+    # send confirmation
+    clientSocket.send(bytes("Username accepted. Waiting for game to start ...\n", "utf-8"))
+    # send player list to all players
+    for player in players:
+        player["connection"].send(bytes(players, "utf-8"))
 
-#TODO
-def startNextRound():
-    print("Starting next round")
 
-#TODO
-def getNextQuestion():
-    print("Getting next question")
+def sendToAllPlayers(message):
+    for player in players:
+        try:
+            player["connection"].send(bytes(message, "utf-8"))
+        except:
+            player["connection"].close()
+            print("Player disconnected", player["username"])
+            players.remove(player)
 
-#TODO
-def sendScoreboard():
-    print("Sending scoreboard")
+def sendToPlayer(player, message):
+    try:
+        player["connection"].send(bytes(message, "utf-8"))
+    except:
+        player["connection"].close()
+        print("Player disconnected", player["username"])
+        players.remove(player)
+
+def receiveAnswerFromPlayerThread(player,answers):
+    answer = player["connection"].recv(1024).decode("utf-8")
+    answers.append({"username": player["username"], "answer": answer})
+    
+
+def receiveAnswersFromPlayers():
+    answers = []
+    for player in players:
+        start_new_thread(receiveAnswerFromPlayerThread, (player,answers))
+    while len(answers) < len(players):
+        pass
+    return answers
+
+if __name__ == "__main__":
+    startServer()
