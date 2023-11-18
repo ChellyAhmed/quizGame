@@ -26,20 +26,32 @@ if __name__ == "__main__":
     username = clientSocket.recv(1024).decode("utf-8")
     # send username
     username = input(username)
-    clientSocket.send(bytes(input(username), "utf-8"))
+    clientSocket.send(bytes(username, "utf-8"))
+    print("username sent")
     # receive confirmation
     confirmation = clientSocket.recv(1024).decode("utf-8")
     print(confirmation)
     # check if username was accepted
-    while confirmation != "Username accepted. Waiting for game to start ...":
+    while "Username accepted." not in confirmation:
         user = input("Username taken. Enter new username: ")
         clientSocket.send(bytes(user, "utf-8"))
         confirmation = clientSocket.recv(1024)
         print(confirmation)
     # receive player list
+    print("out of loop")
     players = clientSocket.recv(1024).decode("utf-8")
     print(players)
     # start game
-    
-
-
+    # Keep the connection open:
+    while True:
+        # receive data
+        data = clientSocket.recv(1024).decode("utf-8")
+        # check if data is empty
+        if not data:
+            break
+        # print received data
+        print("Received:", data)
+        
+        # send data
+        message = input("Enter message to send: ")
+        clientSocket.send(bytes(message, "utf-8"))

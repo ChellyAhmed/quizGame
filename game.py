@@ -3,16 +3,14 @@
 #
 #
 
-from questions import Questions
+from questions import questions
 
 #TODO
-def initGame():
+def initGame(numberOfRounds, questionsPerRound):
     print("Initializing game")
-
-#TODO
-def startNextRound():
-    print("Starting next round")
-
+    for i in range(numberOfRounds):
+        StartRound(questionsPerRound)
+    
 #TODO
 def getNextQuestion():
     print("Getting next question")
@@ -43,9 +41,9 @@ def display(message): #Displays in the server console
     #TODO
     print(message)
 
-def initializeScoreBoard(): 
-    for user in clientsNames:
-        scoreBoard[user] = 0
+def initializeScoreBoard(players): 
+    for player in players:
+        scoreBoard[player["username"]] = 0
 
 def playQuestion(): 
     question = random.choice(questions)

@@ -12,7 +12,7 @@ def startServer():
     print("Starting server")
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serverSocket.bind((socket.gethostname(), 1234))
-    serverSocket.listen(5)
+    serverSocket.listen()
     while True:
         # accept connections
         clientSocket, address = serverSocket.accept()
@@ -38,7 +38,7 @@ def playerConnectionThread(clientSocket):
     clientSocket.send(bytes("Username accepted. Waiting for game to start ...\n", "utf-8"))
     # send player list to all players
     for player in players:
-        player["connection"].send(bytes(players, "utf-8"))
+        player["connection"].send(bytes(str(players), "utf-8"))
 
 
 def sendToAllPlayers(message):
@@ -73,3 +73,4 @@ def receiveAnswersFromPlayers():
 
 if __name__ == "__main__":
     startServer()
+    

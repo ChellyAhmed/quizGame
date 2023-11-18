@@ -1,4 +1,4 @@
-Questions = [
+questions = [
     {'question': "What is the capital of Tunisia",
                   'A': "Sfax",
                   'B': "Tunis",
