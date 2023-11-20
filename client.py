@@ -21,13 +21,15 @@ if __name__ == "__main__":
         port = 1234
     else:
         port = int(port)
-    clientSocket = connectToServer(socket.gethostname(), 1234)
+    clientSocket = connectToServer(address, 1234)
     # receive username request
     username = clientSocket.recv(1024).decode("utf-8")
     # send username
     username = input(username)
+    while(username==""):
+        print("Username can't be empty. Try again : ",username)
+        username = input(username)
     clientSocket.send(bytes(username, "utf-8"))
-    print("username sent")
     # receive confirmation
     confirmation = clientSocket.recv(1024).decode("utf-8")
     print(confirmation)
@@ -35,7 +37,7 @@ if __name__ == "__main__":
     while "Username accepted." not in confirmation:
         user = input("Username taken. Enter new username: ")
         clientSocket.send(bytes(user, "utf-8"))
-        confirmation = clientSocket.recv(1024)
+        confirmation = clientSocket.recv(1024).decode("utf-8")
         print(confirmation)
     # receive player list
     print("out of loop")
