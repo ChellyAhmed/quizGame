@@ -3,17 +3,24 @@
 #
 #
 import socket
+import time
+from threading import Thread
 from _thread import *
+import game
 
 players = []
+gameStarted = False
 
 def startServer():
     # start server with socket TCP and listen for connections
     print("Starting server")
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serverSocket.bind((socket.gethostname(), 1234))
+    serverSocket.bind(('', 1234))
+    print("server started")
     serverSocket.listen()
-    while True:
+    # start thread to handle game logic
+    start_new_thread(serverGameThread, ())
+    while not gameStarted:
         # accept connections
         clientSocket, address = serverSocket.accept()
         print(f"Connection from {address} has been established!")
@@ -21,15 +28,38 @@ def startServer():
         start_new_thread(playerConnectionThread, tuple([clientSocket]))
 
 
+def serverGameThread():
+    print("Type 'begin' to start the game")
+    ans = input()
+    while(ans!="begin"):
+        print("Type 'begin' to start the game")
+        ans = input()
+    sendToAllPlayers("Game has begun")
+    sendToAllPlayers("Game has begun")
+    sendToAllPlayers("Game has begun")
+    sendToAllPlayers("Game has begun")
+    sendToAllPlayers("Game has begun")
+    global gameStarted
+    gameStarted = True
+    game.initGame(1,3,players)
+    sendToAllPlayers("Ended thread")
+
+    
+
+
 def playerConnectionThread(clientSocket):
+    global players
     # send username request
     clientSocket.send(bytes("Enter username: ", "utf-8"))
     # receive username
     username = clientSocket.recv(1024).decode("utf-8")
+    print("username received ",username)
     # check if username is unique
-    while username in [player["username"] for player in players]:
-        # send username request
-        clientSocket.send(bytes("Username already taken, enter a different username: ", "utf-8"))
+    while username in [player["username"] for player in players] or username=="":
+        if(username==""):
+            clientSocket.send(bytes("Username can't be empty, enter a different username: ", "utf-8"))
+        else:
+            clientSocket.send(bytes("Username already taken, enter a different username: ", "utf-8"))
         # receive username
         username = clientSocket.recv(1024).decode("utf-8")
     # add player to players list
@@ -58,17 +88,40 @@ def sendToPlayer(player, message):
         print("Player disconnected", player["username"])
         players.remove(player)
 
+def sendToPlayerByUsername(playerUsername, message):
+    for player in players:
+        if player["username"] == playerUsername:
+            try:
+                player["connection"].send(bytes(message, "utf-8"))
+            except:
+                player["connection"].close()
+                print("Player disconnected", player["username"])
+                players.remove(player)
+
 def receiveAnswerFromPlayerThread(player,answers):
-    answer = player["connection"].recv(1024).decode("utf-8")
-    answers.append({"username": player["username"], "answer": answer})
+    print("waiting for answer from player ",player["username"])
+    sendTime = time.time()
+    while(time.time() - sendTime < 15):
+        answer = player["connection"].recv(1024).decode("utf-8")
+        answers.append({"username": player["username"], "answer": answer, "time": time.time() - sendTime})
+        print(answer)
+        print("got answer from ",player["username"])
+    answers.append({"username": player["username"], "answer": "No answer", "time": time.time() - sendTime})
     
 
 def receiveAnswersFromPlayers():
+    print("waiting for answers")
     answers = []
+    threads = []
+    print("players ",players)
     for player in players:
-        start_new_thread(receiveAnswerFromPlayerThread, (player,answers))
-    while len(answers) < len(players):
-        pass
+        print("Player starting")
+        t = Thread(target=receiveAnswerFromPlayerThread, args=(player,answers, ))
+        t.start()
+        print("thread started")
+        threads.append(t)
+    for t in threads:
+        t.join()
     return answers
 
 if __name__ == "__main__":
