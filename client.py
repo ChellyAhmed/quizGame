@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # connect to server
     address = input("Enter server address: (if left blank, will use localhost) ")
     if address == "":
-        address = socket.gethostname()
+        address = "localhost"
     port = input("Enter server port: (if left blank, will use 1234) ")
     if port == "":
         port = 1234
@@ -52,8 +52,10 @@ if __name__ == "__main__":
         if not data:
             break
         # print received data
-        print("Received:", data)
-        
-        # send data
-        message = input("Enter message to send: ")
-        clientSocket.send(bytes(message, "utf-8"))
+        print(data )
+
+        if ("Enter answer: " in data) :
+            answer = input()
+            clientSocket.send(bytes(answer, "utf-8"))
+        else:
+            print("\n")

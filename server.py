@@ -4,12 +4,53 @@
 #
 import socket
 import time
+import random
 from threading import Thread
 from _thread import *
-import game
+from questions import questions
 
 players = []
 gameStarted = False
+scoreboard = {}
+
+def initGame(numberOfRounds, questionsPerRound, players):
+    print("Initializing game")
+    initializeScoreBoard(players)
+    for _ in range(numberOfRounds):
+        StartRound(questionsPerRound)
+
+def initializeScoreBoard(players): 
+    for player in players:
+        scoreboard[player["username"]] = 0
+
+def playQuestion(): 
+    question = random.choice(questions)
+    print(question)
+    sendToAllPlayers(question['question'])
+    sendToAllPlayers("A: " + question['A']) 
+    sendToAllPlayers("B: " + question['B'])
+    sendToAllPlayers("C: " + question['C'])
+    sendToAllPlayers("D: " + question['D'])
+
+    #Collect answers:
+    answers = receiveAnswersFromPlayers(players)
+
+    for answer in answers:
+        if(answer['answer'] == question['correctKey']):
+            currentPoints = round(15 - answer['time'])
+            scoreboard[answer['username']] += currentPoints
+            sendToPlayerByUsername(answer['username'], "Correct!")
+        else:
+            sendToPlayerByUsername(answer['username'], "Wrong! The correct answer is " + question['correctKey'] + ": " + question[question['correctKey']])
+    questions.remove(question)
+    print(scoreboard)
+
+
+def StartRound(questionsPerRound): 
+    for _ in range(questionsPerRound):
+        playQuestion()
+    print("Round finished!")
+
 
 def startServer():
     # start server with socket TCP and listen for connections
@@ -34,18 +75,11 @@ def serverGameThread():
     while(ans!="begin"):
         print("Type 'begin' to start the game")
         ans = input()
-    sendToAllPlayers("Game has begun")
-    sendToAllPlayers("Game has begun")
-    sendToAllPlayers("Game has begun")
-    sendToAllPlayers("Game has begun")
-    sendToAllPlayers("Game has begun")
     global gameStarted
     gameStarted = True
-    game.initGame(1,3,players)
-    sendToAllPlayers("Ended thread")
-
-    
-
+    initGame(1, 3, players)
+    sendToAllPlayers("Scoreboard: " + str(scoreboard))
+    sendToAllPlayers("Ended Game. Thanks for playing!")
 
 def playerConnectionThread(clientSocket):
     global players
@@ -80,7 +114,7 @@ def sendToAllPlayers(message):
             print("Player disconnected", player["username"])
             players.remove(player)
 
-def sendToPlayer(player, message):
+def sendToPlayer(player, message): #Take a player object (dict) and a message 
     try:
         player["connection"].send(bytes(message, "utf-8"))
     except:
@@ -88,7 +122,7 @@ def sendToPlayer(player, message):
         print("Player disconnected", player["username"])
         players.remove(player)
 
-def sendToPlayerByUsername(playerUsername, message):
+def sendToPlayerByUsername(playerUsername, message): #Take a player usernamr as a string
     for player in players:
         if player["username"] == playerUsername:
             try:
@@ -100,23 +134,22 @@ def sendToPlayerByUsername(playerUsername, message):
 
 def receiveAnswerFromPlayerThread(player,answers):
     print("waiting for answer from player ",player["username"])
-    sendTime = time.time()
-    while(time.time() - sendTime < 15):
-        answer = player["connection"].recv(1024).decode("utf-8")
-        answers.append({"username": player["username"], "answer": answer, "time": time.time() - sendTime})
-        print(answer)
-        print("got answer from ",player["username"])
-    answers.append({"username": player["username"], "answer": "No answer", "time": time.time() - sendTime})
+    sendToPlayer(player, "Enter answer: ")
+    startTime = time.time()
+    answer = player["connection"].recv(1024).decode("utf-8")
+    answerTime = time.time() - startTime
+    answers.append({"username": player["username"], "answer": answer, "time": answerTime})
+    print("got answer from ",player["username"])
     
 
-def receiveAnswersFromPlayers():
+def receiveAnswersFromPlayers(players):
     print("waiting for answers")
     answers = []
     threads = []
-    print("players ",players)
+    print("players ", players)
     for player in players:
         print("Player starting")
-        t = Thread(target=receiveAnswerFromPlayerThread, args=(player,answers, ))
+        t = Thread(target=receiveAnswerFromPlayerThread, args=(player, answers, ))
         t.start()
         print("thread started")
         threads.append(t)
@@ -126,4 +159,3 @@ def receiveAnswersFromPlayers():
 
 if __name__ == "__main__":
     startServer()
-    

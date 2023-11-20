@@ -47,7 +47,7 @@ def playQuestion():
     sendToAllPlayers("D: " + question['D'])
 
     #Collect answers:
-    answers = receiveAnswersFromPlayers()
+    answers = receiveAnswersFromPlayers(players)
 
     for answer in answers:
         if(answer['answer'] == question['correctKey']):
