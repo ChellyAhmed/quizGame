@@ -7,6 +7,7 @@ import time
 import random
 from threading import Thread
 from _thread import *
+import select
 from questions import questions
 
 players = []
@@ -135,11 +136,18 @@ def sendToPlayerByUsername(playerUsername, message): #Take a player usernamr as 
 def receiveAnswerFromPlayerThread(player,answers):
     print("waiting for answer from player ",player["username"])
     sendToPlayer(player, "Enter answer: ")
+    readable, writable, exceptional = select.select([player["connection"]], [], [], 15)
     startTime = time.time()
-    answer = player["connection"].recv(1024).decode("utf-8")
-    answerTime = time.time() - startTime
-    answers.append({"username": player["username"], "answer": answer, "time": answerTime})
-    print("got answer from ",player["username"])
+    if not readable:
+        print("Player ", player["username"], " didn't answer in time")
+        answers.append({"username": player["username"], "answer": "No answer", "time": 0})
+        return
+    else :
+        answer = readable[0].recv(1024).decode("utf-8")
+        print("answer received from player ", player["username"], " : ", answer)
+        answers.append({"username": player["username"], "answer": answer, "time": time.time() - startTime})
+        return
+
     
 
 def receiveAnswersFromPlayers(players):

@@ -3,6 +3,7 @@
 #
 #
 import socket
+from _thread import *
 
 def connectToServer(address, port):
     print("Connecting to server")
@@ -44,18 +45,39 @@ if __name__ == "__main__":
     players = clientSocket.recv(1024).decode("utf-8")
     print(players)
     # start game
-    # Keep the connection open:
-    while True:
-        # receive data
-        data = clientSocket.recv(1024).decode("utf-8")
-        # check if data is empty
-        if not data:
-            break
-        # print received data
-        print(data )
+    def sendThread(clientSocket):
+        while True:
+            message = input()
+            clientSocket.send(bytes(message, "utf-8"))
+    
+    def receiveThread(clientSocket):
+        while True:
+            data = clientSocket.recv(1024).decode("utf-8")
+            if not data:
+                break
+            print(data)
 
-        if ("Enter answer: " in data) :
-            answer = input()
-            clientSocket.send(bytes(answer, "utf-8"))
-        else:
-            print("\n")
+
+    # start send thread
+    start_new_thread(sendThread, tuple([clientSocket]))
+    # start receive thread
+    start_new_thread(receiveThread, tuple([clientSocket]))
+
+    while True:
+        pass
+    # # Keep the connection open:
+    # while True:
+    #     # receive data
+    #     data = clientSocket.recv(1024).decode("utf-8")
+    #     # check if data is empty
+    #     if not data:
+    #         break
+    #     # print received data
+    #     print(data )
+
+    #     if ("Enter answer: " in data) :
+    #         answer = input()
+    #         clientSocket.send(bytes(answer, "utf-8"))
+    #     else:
+    #         print("\n")
+    
