@@ -1,23 +1,30 @@
 #  This file will handle all client connections to the server and sending and receiving data.
-# 
+#
 #
 #
 import socket
 from _thread import *
+from style import *
+
 
 def connectToServer(address, port):
-    print("Connecting to server")
+    print_server_info("Client-Status", "Connecting to server...", "red")
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     clientSocket.connect((address, port))
-    print("Connected to server")
+    print_server_info("Client-Status", "Connected to server !  ", "green")
     return clientSocket
 
+
 if __name__ == "__main__":
+    # welcome message
+    print_welcome()
     # connect to server
-    address = input("Enter server address: (if left blank, will use localhost) ")
+    address = input(get_client_info(
+        "Enter server address (if left blank, will use localhost) : ", "blue"))
     if address == "":
         address = "localhost"
-    port = input("Enter server port: (if left blank, will use 1234) ")
+    port = input(get_client_info(
+        "Enter server port: (if left blank, will use 1234) : ", "blue"))
     if port == "":
         port = 1234
     else:
@@ -27,8 +34,8 @@ if __name__ == "__main__":
     username = clientSocket.recv(1024).decode("utf-8")
     # send username
     username = input(username)
-    while(username==""):
-        print("Username can't be empty. Try again : ",username)
+    while(username == ""):
+        print("Username can't be empty. Try again : ", username)
         username = input(username)
     clientSocket.send(bytes(username, "utf-8"))
     # receive confirmation
@@ -45,18 +52,18 @@ if __name__ == "__main__":
     players = clientSocket.recv(1024).decode("utf-8")
     print(players)
     # start game
+
     def sendThread(clientSocket):
         while True:
             message = input()
             clientSocket.send(bytes(message, "utf-8"))
-    
+
     def receiveThread(clientSocket):
         while True:
             data = clientSocket.recv(1024).decode("utf-8")
             if not data:
                 break
-            print(data)
-
+            print_recv_data(data)
 
     # start send thread
     start_new_thread(sendThread, tuple([clientSocket]))
@@ -80,4 +87,3 @@ if __name__ == "__main__":
     #         clientSocket.send(bytes(answer, "utf-8"))
     #     else:
     #         print("\n")
-    
