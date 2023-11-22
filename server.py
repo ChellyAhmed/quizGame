@@ -45,6 +45,7 @@ def playQuestion():
     answers = receiveAnswersFromPlayers(players)
 
     for answer in answers:
+        answer['answer'] = answer['answer'].upper()
         if(answer['answer'] == question['correctKey']):
             currentPoints = round(15 - answer['time'])
             scoreboard[answer['username']] += currentPoints
