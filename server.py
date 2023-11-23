@@ -17,6 +17,8 @@ gameStarted = False
 scoreboard = {}
 isWaiting = False
 answers = []
+threads = []
+expectedKey = ""
 
 def initGame(numberOfRounds, questionsPerRound, players):
     print("Initializing game")
@@ -32,7 +34,10 @@ def initializeScoreBoard(players):
 
 def playQuestion():
     global isWaiting
+    global threads
+    global expectedKey
     question = random.choice(questions)
+    expectedKey = question['correctKey']
     print_question(question)
     # print_question_option(question['A'])
 
@@ -46,10 +51,14 @@ def playQuestion():
     # Collect answers:
     receiveAnswersFromPlayers(players)
     
-    #TODO: keep waiting while the threads are running
+    #wait for the threads to terminate
+    for t in threads:
+        t.join()
+    print("answers received")    
     
     for answer in answers:
         answer['answer'] = answer['answer'].upper()
+        print("answer ", answer)
         if(answer['answer'] == question['correctKey']):
             isWaiting = False
             currentPoints = round(15 - answer['time'])
@@ -157,19 +166,21 @@ def sendToPlayerByUsername(playerUsername, message):
                 print("Player disconnected", player["username"])
                 players.remove(player)
 
-
 def receiveAnswerFromPlayerThread(player, answers):
     global isWaiting
+    global expectedKey
     print("waiting for answer from player ", player["username"])
     sendToPlayer(player, "Enter answer: ")
     startTime = time.time()
     while (isWaiting):
-        readable, writable, exceptional = select.select([player["connection"]], [], [])
+        readable, writable, exceptional = select.select([player["connection"]], [], [],0.1)
         if readable: # If there is data to be read
             answer = readable[0].recv(1024).decode("utf-8")
             print("answer received from player ", player["username"], " : ", answer)
             answers.append(
                 {"username": player["username"], "answer": answer, "time": time.time() - startTime})
+            if (answer.upper() == expectedKey):
+                isWaiting = False
             return
         if (time.time() - startTime > 15):
             isWaiting = False
@@ -186,6 +197,7 @@ def receiveAnswersFromPlayers(players):
     print("waiting for answers")
     global answers
     answers = []
+    global threads
     threads = []
     print("players ", players)
     for player in players:
@@ -193,7 +205,6 @@ def receiveAnswersFromPlayers(players):
         t = Thread(target=receiveAnswerFromPlayerThread,
                    args=(player, answers, ))
         t.start()
-        print("thread started")
         threads.append(t)
 
 if __name__ == "__main__":
