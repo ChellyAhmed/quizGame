@@ -15,7 +15,8 @@ from style import *
 players = []
 gameStarted = False
 scoreboard = {}
-
+isWaiting = False
+answers = []
 
 def initGame(numberOfRounds, questionsPerRound, players):
     print("Initializing game")
@@ -30,23 +31,27 @@ def initializeScoreBoard(players):
 
 
 def playQuestion():
+    global isWaiting
     question = random.choice(questions)
     print_question(question)
     # print_question_option(question['A'])
 
     # print(question)
-    sendToAllPlayers(question['question'])
-    sendToAllPlayers("A. " + question['A']+" ")
-    sendToAllPlayers("B. " + question['B']+" ")
-    sendToAllPlayers("C. " + question['C'] + " ")
-    sendToAllPlayers("D. " + question['D'] + " ")
+    sendToAllPlayers(question['question']+ "\n")
+    sendToAllPlayers("A. " + question['A']+"\n")
+    sendToAllPlayers("B. " + question['B']+"\n")
+    sendToAllPlayers("C. " + question['C'] + "\n")
+    sendToAllPlayers("D. " + question['D'] + "\n")
 
     # Collect answers:
-    answers = receiveAnswersFromPlayers(players)
-
+    receiveAnswersFromPlayers(players)
+    
+    #TODO: keep waiting while the threads are running
+    
     for answer in answers:
         answer['answer'] = answer['answer'].upper()
         if(answer['answer'] == question['correctKey']):
+            isWaiting = False
             currentPoints = round(15 - answer['time'])
             scoreboard[answer['username']] += currentPoints
             sendToPlayerByUsername(answer['username'], "⭐ Correct! ⭐")
@@ -141,7 +146,7 @@ def sendToPlayer(player, message):  # Take a player object (dict) and a message
         players.remove(player)
 
 
-# Take a player usernamr as a string
+# Take a player username as a string
 def sendToPlayerByUsername(playerUsername, message):
     for player in players:
         if player["username"] == playerUsername:
@@ -154,27 +159,32 @@ def sendToPlayerByUsername(playerUsername, message):
 
 
 def receiveAnswerFromPlayerThread(player, answers):
+    global isWaiting
     print("waiting for answer from player ", player["username"])
     sendToPlayer(player, "Enter answer: ")
-    readable, writable, exceptional = select.select(
-        [player["connection"]], [], [], 15)
     startTime = time.time()
-    if not readable:
-        print("Player ", player["username"], " didn't answer in time")
-        answers.append(
-            {"username": player["username"], "answer": "No answer", "time": 0})
-        return
-    else:
-        answer = readable[0].recv(1024).decode("utf-8")
-        print("answer received from player ",
-              player["username"], " : ", answer)
-        answers.append(
-            {"username": player["username"], "answer": answer, "time": time.time() - startTime})
-        return
-
+    while (isWaiting):
+        readable, writable, exceptional = select.select([player["connection"]], [], [])
+        if readable: # If there is data to be read
+            answer = readable[0].recv(1024).decode("utf-8")
+            print("answer received from player ", player["username"], " : ", answer)
+            answers.append(
+                {"username": player["username"], "answer": answer, "time": time.time() - startTime})
+            return
+        if (time.time() - startTime > 15):
+            isWaiting = False
+    #Timeout
+    print("Player ", player["username"], " didn't answer in time")
+    answers.append(
+        {"username": player["username"], "answer": "No answer", "time": 0})
+    return
+    
 
 def receiveAnswersFromPlayers(players):
+    global isWaiting
+    isWaiting = True
     print("waiting for answers")
+    global answers
     answers = []
     threads = []
     print("players ", players)
@@ -185,10 +195,6 @@ def receiveAnswersFromPlayers(players):
         t.start()
         print("thread started")
         threads.append(t)
-    for t in threads:
-        t.join()
-    return answers
-
 
 if __name__ == "__main__":
     startServer()

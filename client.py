@@ -72,18 +72,3 @@ if __name__ == "__main__":
 
     while True:
         pass
-    # # Keep the connection open:
-    # while True:
-    #     # receive data
-    #     data = clientSocket.recv(1024).decode("utf-8")
-    #     # check if data is empty
-    #     if not data:
-    #         break
-    #     # print received data
-    #     print(data )
-
-    #     if ("Enter answer: " in data) :
-    #         answer = input()
-    #         clientSocket.send(bytes(answer, "utf-8"))
-    #     else:
-    #         print("\n")
