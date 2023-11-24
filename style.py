@@ -2,28 +2,14 @@
 #
 #
 #
-import os
+
 import sys
-import rich
 from termcolor import colored, cprint
 from rich import print
 from rich.panel import Panel
 from rich.console import Console
 from questions import questions
-
-# defining ascii strings that will have their own custom print functions
-
-quizTrivia = """
-
-
- ██████╗ ██╗   ██╗██╗███████╗    ████████╗██████╗ ██╗██╗   ██╗██╗ █████╗
-██╔═══██╗██║   ██║██║╚══███╔╝    ╚══██╔══╝██╔══██╗██║██║   ██║██║██╔══██╗
-██║   ██║██║   ██║██║  ███╔╝        ██║   ██████╔╝██║██║   ██║██║███████║
-██║▄▄ ██║██║   ██║██║ ███╔╝         ██║   ██╔══██╗██║╚██╗ ██╔╝██║██╔══██║
-╚██████╔╝╚██████╔╝██║███████╗       ██║   ██║  ██║██║ ╚████╔╝ ██║██║  ██║
- ╚══▀▀═╝  ╚═════╝ ╚═╝╚
-
-    """
+from strings import *
 
 
 # the following functions will be used to print the ascii strings defined above
