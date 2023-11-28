@@ -48,7 +48,7 @@ if __name__ == "__main__":
         confirmation = clientSocket.recv(1024).decode("utf-8")
         print(confirmation)
     # receive player list
-    print("out of loop")
+    # print("out of loop")
     players = clientSocket.recv(1024).decode("utf-8")
     print(players)
     # start game

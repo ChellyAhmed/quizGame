@@ -20,6 +20,11 @@ answers = []
 threads = []
 expectedKey = ""
 
+# to be displayed to the client in welcome screen
+PORT = 1024
+SERVER = socket.gethostbyname(socket.gethostname())
+
+
 def initGame(numberOfRounds, questionsPerRound, players):
     print("Initializing game")
     initializeScoreBoard(players)
@@ -42,7 +47,7 @@ def playQuestion():
     # print_question_option(question['A'])
 
     # print(question)
-    sendToAllPlayers(question['question']+ "\n")
+    sendToAllPlayers(question['question'] + "\n")
     sendToAllPlayers("A. " + question['A']+"\n")
     sendToAllPlayers("B. " + question['B']+"\n")
     sendToAllPlayers("C. " + question['C'] + "\n")
@@ -50,12 +55,12 @@ def playQuestion():
 
     # Collect answers:
     receiveAnswersFromPlayers(players)
-    
-    #wait for the threads to terminate
+
+    # wait for the threads to terminate
     for t in threads:
         t.join()
-    print("answers received")    
-    
+    print("answers received")
+
     for answer in answers:
         answer['answer'] = answer['answer'].upper()
         print("answer ", answer)
@@ -68,6 +73,8 @@ def playQuestion():
             sendToPlayerByUsername(answer['username'], "Wrong! The correct answer is " +
                                    question['correctKey'] + ": " + question[question['correctKey']])
     questions.remove(question)
+    # this is the value of scoreboard : Scoreboard: {'sahar': 3, 'jjk':      ││  0}Ended Game. Thanks for playing!
+    # i want to only print the values of the dictionary
     print(scoreboard)
 
 
@@ -80,6 +87,9 @@ def StartRound(questionsPerRound):
 def startServer():
     # welcome message
     print_welcome()
+    print_instructions(
+        "Instructions", "red", SERVER, PORT)
+    print_start_connection("Setting up connection............ ")
     # start server with socket TCP and listen for connections
     print_server_info("Server-Status", "Starting server...", "red")
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -105,8 +115,8 @@ def serverGameThread():
     global gameStarted
     gameStarted = True
     initGame(1, 3, players)
-    sendToAllPlayers("Scoreboard: " + str(scoreboard))
-    sendToAllPlayers("Ended Game. Thanks for playing!")
+    sendToAllPlayers(str(scoreboard))
+    # sendToAllPlayers("\n Ended Game. Thanks for playing!")
 
 
 def playerConnectionThread(clientSocket):
@@ -115,7 +125,7 @@ def playerConnectionThread(clientSocket):
     clientSocket.send(bytes("Enter username: ", "utf-8"))
     # receive username
     username = clientSocket.recv(1024).decode("utf-8")
-    print("username received ", username)
+    print_name_recieved(username)
     # check if username is unique
     while username in [player["username"] for player in players] or username == "":
         if(username == ""):
@@ -131,9 +141,10 @@ def playerConnectionThread(clientSocket):
     # send confirmation
     clientSocket.send(
         bytes("Username accepted. Waiting for game to start ...\n", "utf-8"))
-    # send player list to all players
+    # send only the players usernames to all players
     for player in players:
-        player["connection"].send(bytes(str(players), "utf-8"))
+        player["connection"].send(
+            bytes(str([player["username"] for player in players]), "utf-8"))
 
 
 def sendToAllPlayers(message):
@@ -166,6 +177,7 @@ def sendToPlayerByUsername(playerUsername, message):
                 print("Player disconnected", player["username"])
                 players.remove(player)
 
+
 def receiveAnswerFromPlayerThread(player, answers):
     global isWaiting
     global expectedKey
@@ -173,10 +185,12 @@ def receiveAnswerFromPlayerThread(player, answers):
     sendToPlayer(player, "Enter answer: ")
     startTime = time.time()
     while (isWaiting):
-        readable, writable, exceptional = select.select([player["connection"]], [], [],0.1)
-        if readable: # If there is data to be read
+        readable, writable, exceptional = select.select(
+            [player["connection"]], [], [], 0.1)
+        if readable:  # If there is data to be read
             answer = readable[0].recv(1024).decode("utf-8")
-            print("answer received from player ", player["username"], " : ", answer)
+            print("answer received from player ",
+                  player["username"], " : ", answer)
             answers.append(
                 {"username": player["username"], "answer": answer, "time": time.time() - startTime})
             if (answer.upper() == expectedKey):
@@ -184,12 +198,12 @@ def receiveAnswerFromPlayerThread(player, answers):
             return
         if (time.time() - startTime > 15):
             isWaiting = False
-    #Timeout
+    # Timeout
     print("Player ", player["username"], " didn't answer in time")
     answers.append(
         {"username": player["username"], "answer": "No answer", "time": 0})
     return
-    
+
 
 def receiveAnswersFromPlayers(players):
     global isWaiting
@@ -206,6 +220,7 @@ def receiveAnswersFromPlayers(players):
                    args=(player, answers, ))
         t.start()
         threads.append(t)
+
 
 if __name__ == "__main__":
     startServer()
