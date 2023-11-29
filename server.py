@@ -114,7 +114,9 @@ def serverGameThread():
         ans = input()
     global gameStarted
     gameStarted = True
-    initGame(1, 3, players)
+    numberOfRounds = int(input("Enter number of rounds: "))
+    questionsPerRound = int(input("Enter number of questions per round: "))
+    initGame(numberOfRounds, questionsPerRound, players)
     sendToAllPlayers(str(scoreboard))
     # sendToAllPlayers("\n Ended Game. Thanks for playing!")
 
