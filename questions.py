@@ -82,5 +82,33 @@ questions = [
      'C': "7",
      'D': "9",
      'correctKey': "C"
-     }
+     },
+    {'question': "What is the square root of 49  ? ",
+     'A': "8",
+     'B': "6",
+     'C': "7",
+     'D': "9",
+     'correctKey': "C"
+     },
+    {'question': "What does CRC stand for? ",
+     'A': "Circle Redundancy Check",
+     'B': "Cyclic Redundancy Check",
+     'C': "Cyclic Redundancy Code",
+     'D': "Circle Redundancy Code",
+     'correctKey': "B"
+     },
+    {'question': "What does RAM stand for? ",
+     'A': "Random Access Memory",
+     'B': "Random Access Machine",
+     'C': "Random Access Module",
+     'D': "Random Access Multiprocessor",
+        'correctKey': "A"
+     },
+    {'question': "In which layer is the information a Frame ",
+     'A': "Application layer",
+     'B': "Network layer",
+     'C': "Transport layer",
+     'D': "Data link layer",
+        'correctKey': "D"
+     },
 ]
